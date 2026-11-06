@@ -1,0 +1,34 @@
+# Lint, test, and production build on push/PR
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Prisma / Next may read DATABASE_URL at build time; no live DB connection required for prisma generate
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/radiofy_ci?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run lint
+
+      - run: pnpm test
+
+      - run: pnpm run build

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Radio,
@@ -621,9 +622,11 @@ export function CommandCenter() {
             {/* Album Artwork & Current Track Info */}
             <div className="flex items-center gap-3">
               <div className="relative w-16 h-16 rounded overflow-hidden border border-border-subtle shrink-0">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80"
                   alt="Track Cover"
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
                 />
                 <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/70 text-[8px] font-mono text-primary font-bold">
@@ -684,7 +687,7 @@ export function CommandCenter() {
             <div className="p-2.5 rounded bg-surface-container border border-border-subtle flex items-center justify-between text-xs font-mono">
               <div className="truncate">
                 <span className="text-on-surface-variant">⏭ Up Next in 01:34: </span>
-                <span className="text-on-surface font-semibold">"Starlight Expressway"</span>
+                <span className="text-on-surface font-semibold">“Starlight Expressway”</span>
               </div>
               <span className="text-[10px] px-1 py-0.5 rounded bg-surface-container-high text-tertiary shrink-0">
                 0.8S CUE

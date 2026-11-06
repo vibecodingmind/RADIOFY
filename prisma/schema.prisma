@@ -162,6 +162,7 @@ model Organization {
   apiKeys           ApiKey[]
   webhookEndpoints  WebhookEndpoint[]
   auditLogs         AuditLog[]
+  pesapalPendingCheckouts PesapalPendingCheckout[]
 
   @@map("organizations")
 }
@@ -650,6 +651,23 @@ model ProcessedPaymentWebhook {
 
   @@unique([gateway, eventId])
   @@map("processed_payment_webhooks")
+}
+
+/** Maps PesaPal SubmitOrderRequest `id` (merchant reference) to org/plan for IPN activation */
+model PesapalPendingCheckout {
+  id                 String       @id @default(uuid())
+  merchantReference  String       @unique
+  orgId              String
+  planId             String
+  billingCycle       BillingCycle @default(MONTHLY)
+  amount             Decimal      @db.Decimal(12, 2)
+  currency           String       @default("USD")
+  createdAt          DateTime     @default(now())
+
+  organization       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("pesapal_pending_checkouts")
 }
 
 // -------------------------------------------------------------

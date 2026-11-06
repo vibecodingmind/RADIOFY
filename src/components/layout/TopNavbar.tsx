@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -282,9 +283,11 @@ export function TopNavbar({
               </div>
             </div>
             {user?.avatarUrl ? (
-              <img
+              <Image
                 src={user.avatarUrl}
                 alt={user.name}
+                width={28}
+                height={28}
                 className="w-7 h-7 rounded-full object-cover border border-primary-container/40"
               />
             ) : (

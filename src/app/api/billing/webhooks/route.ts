@@ -17,7 +17,7 @@ function webhookEventId(
     const t =
       (payload.OrderTrackingId as string) ||
       (payload.order_tracking_id as string) ||
-      (payload.merchant_reference as string);
+      (payload.orderTrackingId as string);
     return t || null;
   }
   return null;
@@ -47,6 +47,18 @@ export async function POST(req: Request) {
         },
       });
       if (existing) {
+        if (gateway === "PESAPAL") {
+          const orderTrackingId =
+            (payload.OrderTrackingId as string) ||
+            (payload.order_tracking_id as string) ||
+            (payload.orderTrackingId as string) ||
+            eventId;
+          return NextResponse.json({
+            orderNotificationType: "IPNCHANGE",
+            orderTrackingId,
+            status: 200,
+          });
+        }
         return NextResponse.json({ success: true, duplicate: true });
       }
     }
@@ -54,14 +66,21 @@ export async function POST(req: Request) {
     const result = await adapter.processWebhook(payload);
 
     if (result.activate) {
-      const { orgId, planId, gatewaySubId, amount } = result.activate;
+      const a = result.activate;
       await PaymentService.activateSubscriptionFromWebhook(
-        orgId,
-        planId,
+        a.orgId,
+        a.planId,
         gateway,
-        gatewaySubId,
-        amount
+        a.gatewaySubId,
+        a.amount,
+        a.billingCycle ?? "MONTHLY",
+        a.currency ?? "USD"
       );
+      if (gateway === "PESAPAL" && result.pesapalMerchantReference) {
+        await prisma.pesapalPendingCheckout
+          .deleteMany({ where: { merchantReference: result.pesapalMerchantReference } })
+          .catch(() => undefined);
+      }
     }
 
     if (eventId) {
@@ -71,10 +90,29 @@ export async function POST(req: Request) {
         });
       } catch (e: unknown) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+          if (gateway === "PESAPAL") {
+            const orderTrackingId =
+              (payload.OrderTrackingId as string) ||
+              (payload.order_tracking_id as string) ||
+              (payload.orderTrackingId as string) ||
+              eventId;
+            const ack =
+              result.ipnAck ||
+              ({
+                orderNotificationType: "IPNCHANGE",
+                orderTrackingId,
+                status: 200,
+              } as Record<string, unknown>);
+            return NextResponse.json(ack);
+          }
           return NextResponse.json({ success: true, duplicate: true });
         }
         throw e;
       }
+    }
+
+    if (gateway === "PESAPAL" && result.ipnAck) {
+      return NextResponse.json(result.ipnAck);
     }
 
     return NextResponse.json({ success: true, result });

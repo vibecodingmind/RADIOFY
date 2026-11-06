@@ -269,7 +269,7 @@ export function MediaClient({
             {filteredFiles.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-on-surface-variant">
-                  No audio files found. Click "Upload Audio" to ingest tracks.
+                  No audio files found. Click “Upload Audio” to ingest tracks.
                 </td>
               </tr>
             ) : (

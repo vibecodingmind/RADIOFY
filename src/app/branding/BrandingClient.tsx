@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Radio, Image, Loader2 } from "lucide-react";
+import NextImage from "next/image";
+import { Radio, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface StationBrand {
   id: string;
@@ -82,7 +83,13 @@ export function BrandingClient({ stations }: { stations: StationBrand[] }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-4 rounded bg-surface-container border border-border-subtle text-xs space-y-3 text-center">
           {selected.logoUrl ? (
-            <img src={selected.logoUrl} alt="" className="w-20 h-20 mx-auto rounded-full object-cover" />
+            <NextImage
+              src={selected.logoUrl}
+              alt={`${selected.name} logo`}
+              width={80}
+              height={80}
+              className="w-20 h-20 mx-auto rounded-full object-cover"
+            />
           ) : (
             <div className="w-20 h-20 mx-auto rounded-full bg-primary-container/20 flex items-center justify-center">
               <Radio className="w-10 h-10 text-primary-container" />
@@ -99,14 +106,16 @@ export function BrandingClient({ stations }: { stations: StationBrand[] }) {
 
         <div className="p-4 rounded bg-surface-container border border-border-subtle text-xs space-y-3 text-center">
           {selected.playerBannerUrl ? (
-            <img
+            <NextImage
               src={selected.playerBannerUrl}
-              alt=""
+              alt={`${selected.name} player banner`}
+              width={800}
+              height={200}
               className="w-full h-20 rounded object-cover"
             />
           ) : (
             <div className="w-full h-20 rounded bg-surface-panel flex items-center justify-center">
-              <Image className="w-8 h-8 text-secondary" />
+              <ImageIcon className="w-8 h-8 text-secondary" aria-hidden />
             </div>
           )}
           <div className="font-bold text-on-surface">Player Banner</div>

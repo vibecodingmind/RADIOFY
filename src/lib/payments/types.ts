@@ -6,6 +6,8 @@ export interface CreateCheckoutInput {
   billingCycle: "MONTHLY" | "ANNUAL";
   successUrl: string;
   cancelUrl: string;
+  /** Billing contact (e.g. org contact email) for gateways that require it */
+  customerEmail?: string;
 }
 
 export interface CheckoutResult {
@@ -26,7 +28,13 @@ export interface WebhookResult {
     planId: string;
     gatewaySubId: string;
     amount: number;
+    billingCycle?: "MONTHLY" | "ANNUAL";
+    currency?: string;
   };
+  /** PesaPal SubmitOrderRequest `id` — delete pending checkout row after activation */
+  pesapalMerchantReference?: string;
+  /** PesaPal IPN expects a JSON ack body (status 200 / 500); see https://developer.pesapal.com */
+  ipnAck?: Record<string, unknown>;
 }
 
 export interface PaymentGatewayAdapter {

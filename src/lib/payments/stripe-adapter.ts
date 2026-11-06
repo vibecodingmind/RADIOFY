@@ -106,6 +106,11 @@ export class StripeAdapter implements PaymentGatewayAdapter {
       const meta = session.metadata || {};
       const orgId = meta.orgId;
       const planId = meta.planId;
+      const billingCycleMeta = meta.billingCycle;
+      const billingCycle =
+        billingCycleMeta === "ANNUAL" || billingCycleMeta === "annual"
+          ? "ANNUAL"
+          : "MONTHLY";
       const subId =
         typeof session.subscription === "string"
           ? session.subscription
@@ -133,6 +138,7 @@ export class StripeAdapter implements PaymentGatewayAdapter {
           planId,
           gatewaySubId: subId,
           amount: amountUsd,
+          billingCycle,
         },
       };
     }

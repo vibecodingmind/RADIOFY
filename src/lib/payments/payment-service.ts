@@ -28,13 +28,22 @@ export class PaymentService {
 
     if (!plan || !plan.isActive) throw new Error("Subscription plan not found or inactive");
 
+    const org = await prisma.organization.findUnique({
+      where: { id: input.orgId },
+      select: { contactEmail: true },
+    });
+    if (!org) throw new Error("Organization not found");
+
     const price =
       input.billingCycle === "ANNUAL"
         ? Number(plan.annualPriceUsd)
         : Number(plan.monthlyPriceUsd);
 
     const adapter = this.getAdapter(gateway);
-    return adapter.initiateSubscription(input, price);
+    return adapter.initiateSubscription(
+      { ...input, customerEmail: input.customerEmail ?? org.contactEmail },
+      price
+    );
   }
 
   /**
@@ -45,7 +54,9 @@ export class PaymentService {
     planId: string,
     gateway: PaymentGatewayType,
     gatewaySubId: string,
-    amount: number
+    amount: number,
+    billingCycle: "MONTHLY" | "ANNUAL" = "MONTHLY",
+    currency: string = "USD"
   ) {
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: planId },
@@ -53,7 +64,11 @@ export class PaymentService {
     if (!plan) throw new Error("Plan not found");
 
     const now = new Date();
-    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const periodMs =
+      billingCycle === "ANNUAL"
+        ? 365 * 24 * 60 * 60 * 1000
+        : 30 * 24 * 60 * 60 * 1000;
+    const periodEnd = new Date(now.getTime() + periodMs);
 
     return await prisma.$transaction(async (tx) => {
       // 1. Create or update subscription
@@ -64,7 +79,7 @@ export class PaymentService {
           orgId,
           planId,
           status: "ACTIVE",
-          billingCycle: "MONTHLY",
+          billingCycle,
           currentPeriodStart: now,
           currentPeriodEnd: periodEnd,
           paymentGateway: gateway,
@@ -73,6 +88,7 @@ export class PaymentService {
         update: {
           planId,
           status: "ACTIVE",
+          billingCycle,
           currentPeriodStart: now,
           currentPeriodEnd: periodEnd,
           paymentGateway: gateway,
@@ -99,7 +115,7 @@ export class PaymentService {
           invoiceNumber,
           amountDue: amount,
           amountPaid: amount,
-          currency: "USD",
+          currency,
           status: "PAID",
           paidAt: now,
           dueDate: now,
@@ -115,7 +131,7 @@ export class PaymentService {
           gateway,
           transactionRef: gatewaySubId,
           amount,
-          currency: "USD",
+          currency,
           status: "SUCCESS",
         },
       });

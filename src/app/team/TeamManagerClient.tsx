@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Users,
   UserPlus,
@@ -202,9 +203,11 @@ export function TeamManagerClient({
                     >
                       <div className="flex items-center gap-3">
                         {member.user.avatarUrl ? (
-                          <img
+                          <Image
                             src={member.user.avatarUrl}
                             alt={member.user.name}
+                            width={36}
+                            height={36}
                             className="w-9 h-9 rounded-full object-cover border border-border-subtle"
                           />
                         ) : (

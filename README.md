@@ -17,6 +17,8 @@ pnpm run dev
 
 Run unit tests: `pnpm test`
 
+CI: GitHub Actions runs `pnpm run lint`, `pnpm test`, and `pnpm run build` on pushes/PRs to `main`/`master`.
+
 Open [http://localhost:3000](http://localhost:3000)
 
 ### Demo accounts (seed)
@@ -37,6 +39,12 @@ Open [http://localhost:3000](http://localhost:3000)
 | Streaming | Icecast (Docker) + Liquidsoap configs (generated per station) |
 | AutoDJ | DB rotation + broadcast logs; cron sync endpoint |
 | Payments | Stripe / PayPal / PesaPal adapters + webhook activation |
+
+**PayPal:** Configure a webhook in the PayPal developer app pointing to  
+`{NEXT_PUBLIC_APP_URL}/api/billing/webhooks?gateway=PAYPAL`  
+and set `PAYPAL_WEBHOOK_ID` (plus client id/secret and optional `PAYPAL_PLAN_MONTHLY_ID` / `PAYPAL_PLAN_ANNUAL_ID` for fixed billing plans). Subscriptions carry `custom_id` as `orgId|planId|MONTHLY` or `orgId|planId|ANNUAL` for activation.
+
+**PesaPal:** Register your IPN URL in the PesaPal dashboard to obtain `PESAPAL_NOTIFICATION_ID`. Point IPN to `{NEXT_PUBLIC_APP_URL}/api/billing/webhooks?gateway=PESAPAL` (POST). Set `PESAPAL_CONSUMER_KEY`, `PESAPAL_CONSUMER_SECRET`, `PESAPAL_IPN_SECRET` (for signed IPN if you enable it), and optionally `PESAPAL_CURRENCY` / `PESAPAL_COUNTRY_CODE` / `PESAPAL_ENVIRONMENT` (`sandbox` or `live`). On IPN, the server calls **GetTransactionStatus** and activates on `COMPLETED`.
 
 ## Streaming
 
