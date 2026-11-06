@@ -1,7 +1,7 @@
 import { PaymentGatewayAdapter, CreateCheckoutInput, CheckoutResult } from "./types";
 import { StripeAdapter } from "./stripe-adapter";
 import { PayPalAdapter } from "./paypal-adapter";
-import { AzamPayAdapter } from "./azampay-adapter";
+import { PesapalAdapter } from "./pesapal-adapter";
 import { PaymentGatewayType } from "@prisma/client";
 import { prisma } from "../prisma";
 
@@ -9,7 +9,7 @@ export class PaymentService {
   private static adapters: Record<PaymentGatewayType, PaymentGatewayAdapter> = {
     STRIPE: new StripeAdapter(),
     PAYPAL: new PayPalAdapter(),
-    AZAMPAY: new AzamPayAdapter(),
+    PESAPAL: new PesapalAdapter(),
   };
 
   static getAdapter(gateway: PaymentGatewayType): PaymentGatewayAdapter {

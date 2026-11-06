@@ -56,7 +56,7 @@ export function BillingClient({
   maxStations: number;
   activeStationCount: number;
 }) {
-  const [selectedGateway, setSelectedGateway] = useState<"STRIPE" | "PAYPAL" | "AZAMPAY">("STRIPE");
+  const [selectedGateway, setSelectedGateway] = useState<"STRIPE" | "PAYPAL" | "PESAPAL">("STRIPE");
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "ANNUAL">("MONTHLY");
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -76,6 +76,11 @@ export function BillingClient({
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to initiate checkout");
+
+      if (typeof data.redirectUrl === "string" && data.redirectUrl.startsWith("http")) {
+        window.location.assign(data.redirectUrl);
+        return;
+      }
 
       setNotice(`Checkout session initiated via ${selectedGateway}. Order Ref: ${data.sessionId}`);
       setTimeout(() => setNotice(null), 5000);
@@ -113,7 +118,7 @@ export function BillingClient({
             ACTIVE GATEWAY:
           </span>
           <div className="inline-flex p-0.5 rounded bg-surface-panel border border-border-subtle">
-            {(["STRIPE", "PAYPAL", "AZAMPAY"] as const).map((gw) => (
+            {(["STRIPE", "PAYPAL", "PESAPAL"] as const).map((gw) => (
               <button
                 key={gw}
                 onClick={() => setSelectedGateway(gw)}

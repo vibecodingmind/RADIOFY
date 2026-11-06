@@ -20,6 +20,13 @@ export interface WebhookResult {
   invoiceId?: string;
   subscriptionId?: string;
   error?: string;
+  /** When verification succeeded and payload authorizes activation */
+  activate?: {
+    orgId: string;
+    planId: string;
+    gatewaySubId: string;
+    amount: number;
+  };
 }
 
 export interface PaymentGatewayAdapter {

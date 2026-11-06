@@ -76,7 +76,7 @@ enum BillingCycle {
 enum PaymentGatewayType {
   STRIPE
   PAYPAL
-  AZAMPAY
+  PESAPAL
 }
 
 enum InvoiceStatus {
@@ -217,6 +217,23 @@ model OrganizationInvite {
 // STATIONS & BROADCASTING
 // -------------------------------------------------------------
 
+enum RestreamPlatform {
+  YOUTUBE
+  FACEBOOK
+  TWITCH
+  TWITTER
+  LINKEDIN
+  TIKTOK
+  CUSTOM
+}
+
+enum RestreamStatus {
+  IDLE
+  ACTIVE
+  ERROR
+  STARTING
+}
+
 model Station {
   id               String               @id @default(uuid())
   orgId            String
@@ -256,9 +273,31 @@ model Station {
   listenerSessions StreamListenerSession[]
   broadcastLogs    BroadcastLog[]
   bandwidthRollups BandwidthRollup[]
+  restreamDestinations RestreamDestination[]
 
   @@index([orgId])
   @@map("stations")
+}
+
+model RestreamDestination {
+  id             String           @id @default(uuid())
+  stationId      String
+  platform       RestreamPlatform @default(CUSTOM)
+  label          String
+  /** Full RTMP(S) ingest URL including path/stream key — treat as secret */
+  rtmpIngestUrl  String
+  enabled        Boolean          @default(true)
+  status         RestreamStatus   @default(IDLE)
+  lastError      String?
+  processPid     Int?
+  bitrateKbps    Int              @default(128)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  station        Station          @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@index([stationId])
+  @@map("restream_destinations")
 }
 
 model StreamMount {
@@ -601,6 +640,16 @@ model PaymentGatewayConfig {
   updatedAt   DateTime           @updatedAt
 
   @@map("payment_gateway_configs")
+}
+
+model ProcessedPaymentWebhook {
+  id          String             @id @default(uuid())
+  gateway     PaymentGatewayType
+  eventId     String
+  processedAt DateTime           @default(now())
+
+  @@unique([gateway, eventId])
+  @@map("processed_payment_webhooks")
 }
 
 // -------------------------------------------------------------

@@ -7,11 +7,15 @@ Next.js 15 control plane for multi-tenant internet radio: stations, media librar
 ```bash
 cp .env.example .env
 docker compose up -d postgres icecast
-npm install
+pnpm install
+# If upgrading from Azam Pay: rename DB enum value, then push schema
+npx prisma db execute --file scripts/migrate-azampay-to-pesapal.sql --schema prisma/schema.prisma
 npx prisma db push
-npm run db:seed
-npm run dev
+pnpm run db:seed
+pnpm run dev
 ```
+
+Run unit tests: `pnpm test`
 
 Open [http://localhost:3000](http://localhost:3000)
 
@@ -32,7 +36,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | Media | Local disk (`STORAGE_LOCAL_PATH`) + ID3 parsing |
 | Streaming | Icecast (Docker) + Liquidsoap configs (generated per station) |
 | AutoDJ | DB rotation + broadcast logs; cron sync endpoint |
-| Payments | Stripe / PayPal / Azam Pay adapters + webhook activation |
+| Payments | Stripe / PayPal / PesaPal adapters + webhook activation |
 
 ## Streaming
 

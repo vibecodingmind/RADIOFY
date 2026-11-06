@@ -18,7 +18,7 @@ import {
 
 interface GatewayConfig {
   id: string;
-  gateway: "STRIPE" | "PAYPAL" | "AZAMPAY";
+  gateway: "STRIPE" | "PAYPAL" | "PESAPAL";
   isEnabled: boolean;
   isLiveMode: boolean;
   configJson: string;
@@ -36,7 +36,7 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
   const [statusMessage, setStatusMessage] = useState<{ gateway: string; message: string; isError?: boolean } | null>(null);
 
   // Form states parsed from configJson
-  const getConfigFor = (gw: "STRIPE" | "PAYPAL" | "AZAMPAY") => {
+  const getConfigFor = (gw: "STRIPE" | "PAYPAL" | "PESAPAL") => {
     const found = configs.find((c) => c.gateway === gw);
     try {
       return {
@@ -52,7 +52,7 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
   const [formState, setFormState] = useState({
     STRIPE: getConfigFor("STRIPE"),
     PAYPAL: getConfigFor("PAYPAL"),
-    AZAMPAY: getConfigFor("AZAMPAY"),
+    PESAPAL: getConfigFor("PESAPAL"),
   });
 
   const handleCopyWebhook = (gw: string) => {
@@ -62,7 +62,7 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
     setTimeout(() => setCopiedGateway(null), 2500);
   };
 
-  const handleSaveGateway = async (gateway: "STRIPE" | "PAYPAL" | "AZAMPAY") => {
+  const handleSaveGateway = async (gateway: "STRIPE" | "PAYPAL" | "PESAPAL") => {
     setSavingGateway(gateway);
     setStatusMessage(null);
 
@@ -462,28 +462,28 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
           </div>
         </div>
 
-        {/* Gateway 3: Azam Pay */}
+        {/* Gateway 3: PesaPal */}
         <div className="bg-[#111622] border border-[#1E293B] rounded-xl p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#FF6600]/20 border border-[#FF6600]/40 flex items-center justify-center font-bold text-sm text-[#FF6600]">
-                  A
+                <div className="w-9 h-9 rounded-lg bg-[#00A86B]/20 border border-[#00A86B]/40 flex items-center justify-center font-bold text-sm text-[#00A86B]">
+                  P
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Azam Pay</h3>
-                  <span className="text-[11px] text-slate-400">Mobile Money (M-Pesa, Airtel, Tigo)</span>
+                  <h3 className="text-base font-bold text-white">PesaPal</h3>
+                  <span className="text-[11px] text-slate-400">Cards & mobile money (East &amp; West Africa)</span>
                 </div>
               </div>
 
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formState.AZAMPAY.isEnabled}
+                  checked={formState.PESAPAL.isEnabled}
                   onChange={(e) =>
                     setFormState({
                       ...formState,
-                      AZAMPAY: { ...formState.AZAMPAY, isEnabled: e.target.checked },
+                      PESAPAL: { ...formState.PESAPAL, isEnabled: e.target.checked },
                     })
                   }
                   className="sr-only peer"
@@ -499,34 +499,34 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
                 onClick={() =>
                   setFormState({
                     ...formState,
-                    AZAMPAY: { ...formState.AZAMPAY, isLiveMode: !formState.AZAMPAY.isLiveMode },
+                    PESAPAL: { ...formState.PESAPAL, isLiveMode: !formState.PESAPAL.isLiveMode },
                   })
                 }
                 className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wider font-mono uppercase transition ${
-                  formState.AZAMPAY.isLiveMode
+                  formState.PESAPAL.isLiveMode
                     ? "bg-[#00FF66]/10 text-[#00FF66] border border-[#00FF66]/20"
                     : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                 }`}
               >
-                {formState.AZAMPAY.isLiveMode ? "LIVE PRODUCTION" : "TEST / SANDBOX"}
+                {formState.PESAPAL.isLiveMode ? "LIVE PRODUCTION" : "TEST / SANDBOX"}
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">
-                  App Name
+                  Consumer Key
                 </label>
                 <input
                   type="text"
-                  placeholder="radiofy_live"
-                  value={formState.AZAMPAY.config.appName || ""}
+                  placeholder="pesapal_consumer_key"
+                  value={formState.PESAPAL.config.consumerKey || ""}
                   onChange={(e) =>
                     setFormState({
                       ...formState,
-                      AZAMPAY: {
-                        ...formState.AZAMPAY,
-                        config: { ...formState.AZAMPAY.config, appName: e.target.value },
+                      PESAPAL: {
+                        ...formState.PESAPAL,
+                        config: { ...formState.PESAPAL.config, consumerKey: e.target.value },
                       },
                     })
                   }
@@ -536,18 +536,18 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
 
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">
-                  Client ID
+                  Consumer Secret
                 </label>
                 <input
-                  type="text"
-                  placeholder="az_client_..."
-                  value={formState.AZAMPAY.config.clientId || ""}
+                  type={showSecrets.pesapal ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={formState.PESAPAL.config.consumerSecret || ""}
                   onChange={(e) =>
                     setFormState({
                       ...formState,
-                      AZAMPAY: {
-                        ...formState.AZAMPAY,
-                        config: { ...formState.AZAMPAY.config, clientId: e.target.value },
+                      PESAPAL: {
+                        ...formState.PESAPAL,
+                        config: { ...formState.PESAPAL.config, consumerSecret: e.target.value },
                       },
                     })
                   }
@@ -557,18 +557,18 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
 
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">
-                  API Key / Secret
+                  IPN signing secret (webhook)
                 </label>
                 <input
-                  type={showSecrets.azampay ? "text" : "password"}
-                  placeholder="az_secret_..."
-                  value={formState.AZAMPAY.config.apiKey || ""}
+                  type={showSecrets.pesapal ? "text" : "password"}
+                  placeholder="Set PESAPAL_IPN_SECRET env for verification"
+                  value={formState.PESAPAL.config.ipnSecret || ""}
                   onChange={(e) =>
                     setFormState({
                       ...formState,
-                      AZAMPAY: {
-                        ...formState.AZAMPAY,
-                        config: { ...formState.AZAMPAY.config, apiKey: e.target.value },
+                      PESAPAL: {
+                        ...formState.PESAPAL,
+                        config: { ...formState.PESAPAL.config, ipnSecret: e.target.value },
                       },
                     })
                   }
@@ -578,19 +578,19 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
 
               <div className="pt-2">
                 <span className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                  Azam Pay Webhook Target URL:
+                  PesaPal Webhook Target URL:
                 </span>
                 <div className="flex items-center gap-1.5 p-2 bg-[#0B0E14] rounded border border-[#1E293B]">
                   <span className="text-[10px] font-mono text-slate-400 truncate flex-1">
-                    .../api/billing/webhooks?gateway=AZAMPAY
+                    .../api/billing/webhooks?gateway=PESAPAL
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleCopyWebhook("AZAMPAY")}
+                    onClick={() => handleCopyWebhook("PESAPAL")}
                     className="p-1 hover:text-[#00E5FF] transition text-slate-400"
                     title="Copy full URL"
                   >
-                    {copiedGateway === "AZAMPAY" ? (
+                    {copiedGateway === "PESAPAL" ? (
                       <Check className="w-3.5 h-3.5 text-[#00FF66]" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
@@ -602,7 +602,7 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
           </div>
 
           <div className="pt-6 mt-6 border-t border-[#1E293B]">
-            {statusMessage?.gateway === "AZAMPAY" && (
+            {statusMessage?.gateway === "PESAPAL" && (
               <div
                 className={`mb-3 p-2 rounded text-xs flex items-center gap-2 ${
                   statusMessage.isError
@@ -616,12 +616,12 @@ export function GatewaysClient({ initialConfigs }: GatewaysClientProps) {
             )}
 
             <button
-              disabled={savingGateway === "AZAMPAY"}
-              onClick={() => handleSaveGateway("AZAMPAY")}
+              disabled={savingGateway === "PESAPAL"}
+              onClick={() => handleSaveGateway("PESAPAL")}
               className="w-full flex items-center justify-center gap-2 py-2 bg-[#00E5FF] hover:bg-[#00E5FF]/90 text-black font-semibold text-xs rounded transition disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              {savingGateway === "AZAMPAY" ? "Saving..." : "Save Azam Pay Configuration"}
+              {savingGateway === "PESAPAL" ? "Saving..." : "Save PesaPal Configuration"}
             </button>
           </div>
         </div>

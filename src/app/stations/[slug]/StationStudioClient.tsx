@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { RestreamSection } from "@/components/stations/RestreamSection";
 import {
   Radio,
   Play,
@@ -394,6 +395,8 @@ export function StationStudioClient({ station: initialStation }: { station: Stat
               ))}
             </div>
           </div>
+
+          <RestreamSection stationId={station.id} />
 
           {/* Process Health & Telemetry */}
           {station.processState && (

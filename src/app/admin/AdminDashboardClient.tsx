@@ -144,7 +144,7 @@ export function AdminDashboardClient({
             <span className="text-xs text-yellow-400 font-mono">Settled</span>
           </div>
           <span className="text-[11px] text-slate-500 mt-2 block">
-            Stripe, PayPal & Azam Pay verified
+            Stripe, PayPal & PesaPal verified
           </span>
         </div>
       </div>
