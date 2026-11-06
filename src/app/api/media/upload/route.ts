@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { AuthorizationService } from "@/lib/permissions";
 import { MediaStorageService } from "@/lib/media-storage";
+import { EntitlementService } from "@/lib/entitlements";
 
 export async function POST(req: Request) {
   const session = await getSessionUser();
@@ -49,6 +50,8 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    await EntitlementService.assertCanUploadBytes(station.orgId, buffer.length);
+
     // Parse audio ID3 metadata and persist to storage
     const parsed = await MediaStorageService.saveAndParseAudio(
       buffer,
@@ -77,9 +80,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update organization storage counter
     await prisma.organization.update({
-      where: { id: orgId },
+      where: { id: station.orgId },
       data: {
         storageUsedBytes: {
           increment: BigInt(parsed.fileSize),

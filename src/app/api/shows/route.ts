@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { AuthorizationService } from "@/lib/permissions";
+import { findStationInTenantScope, getTenantScope } from "@/lib/tenant";
 
 export async function GET(req: Request) {
   const session = await getSessionUser();
@@ -9,13 +10,21 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const stationId = searchParams.get("stationId");
-  const orgId = session.activeMembership?.orgId;
-  const isSuper = session.user.role === "SUPER_ADMIN";
+  const { isSuper, orgId } = getTenantScope(session);
+
+  let stationFilter: { stationId?: string; station?: { orgId?: string } } = {};
+  if (stationId) {
+    const station = await findStationInTenantScope(stationId, isSuper, orgId);
+    if (!station) {
+      return NextResponse.json({ error: "Station not found" }, { status: 404 });
+    }
+    stationFilter = { stationId: station.id };
+  } else if (!isSuper) {
+    stationFilter = { station: { orgId } };
+  }
 
   const shows = await prisma.show.findMany({
-    where: {
-      ...(stationId ? { stationId } : isSuper ? {} : { station: { orgId } }),
-    },
+    where: stationFilter,
     include: {
       station: { select: { id: true, name: true, slug: true } },
       schedules: {

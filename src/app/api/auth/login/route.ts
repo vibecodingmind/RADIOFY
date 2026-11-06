@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, generateToken, COOKIE_NAME } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -20,6 +21,15 @@ export async function POST(req: Request) {
     }
 
     const { email, password } = parsed.data;
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+    const limited = rateLimit(`login:${ip}:${email.toLowerCase()}`, 20, 15 * 60 * 1000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Try again later." },
+        { status: 429 }
+      );
+    }
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },

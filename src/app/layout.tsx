@@ -4,6 +4,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Radiofy — AetherCast Broadcast OS",
   description: "Next-Generation Mission-Critical Internet Radio Hosting Platform",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "Radiofy" },
 };
 
 export default function RootLayout({
@@ -27,6 +29,11 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface min-h-screen selection:bg-primary-container selection:text-on-primary-container">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));}`,
+          }}
+        />
       </body>
     </html>
   );

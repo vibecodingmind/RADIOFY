@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
 import { BottomTransportBar } from "@/components/layout/BottomTransportBar";
-import { Palette, Radio, Upload, Image, Sparkles } from "lucide-react";
+import { Palette } from "lucide-react";
+import { BrandingClient } from "./BrandingClient";
+import { getTenantScope, stationOrgWhere } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +14,19 @@ export default async function BrandingPage() {
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
-  const orgId = session.activeMembership?.orgId;
+  const { isSuper, orgId } = getTenantScope(session);
+
   const stations = await prisma.station.findMany({
-    where: { orgId: orgId || undefined },
+    where: stationOrgWhere(isSuper, orgId),
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      logoUrl: true,
+      playerBannerUrl: true,
+      playerAccentColor: true,
+    },
+    orderBy: { name: "asc" },
   });
 
   return (
@@ -28,43 +40,10 @@ export default async function BrandingPage() {
               <Palette className="w-5 h-5 text-primary-container" />
               <span>Station Branding & Custom Styling</span>
             </h1>
-            <p className="text-xs text-on-surface-variant">
-              Upload custom radio logos, social share banners, and embeddable player theme colors
-            </p>
           </div>
 
-          <div className="p-5 rounded-lg bg-surface-panel border border-border-subtle space-y-4 shadow-panel">
-            <span className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono">
-              Primary Brand Assets
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded bg-surface-container border border-border-subtle text-xs space-y-3 text-center">
-                <div className="w-20 h-20 mx-auto rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container">
-                  <Radio className="w-10 h-10" />
-                </div>
-                <div>
-                  <div className="font-bold text-on-surface">Station Icon Logo</div>
-                  <div className="text-[11px] text-on-surface-variant">512x512px PNG / WebP</div>
-                </div>
-                <button className="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-elevated text-xs font-semibold text-primary border border-border-subtle">
-                  Upload Logo
-                </button>
-              </div>
-
-              <div className="p-4 rounded bg-surface-container border border-border-subtle text-xs space-y-3 text-center">
-                <div className="w-full h-20 rounded bg-surface-panel border border-border-subtle flex items-center justify-center text-on-surface-variant">
-                  <Image className="w-8 h-8 text-secondary" />
-                </div>
-                <div>
-                  <div className="font-bold text-on-surface">Web Player Header Banner</div>
-                  <div className="text-[11px] text-on-surface-variant">1200x400px JPG / PNG</div>
-                </div>
-                <button className="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-elevated text-xs font-semibold text-secondary border border-border-subtle">
-                  Upload Banner
-                </button>
-              </div>
-            </div>
+          <div className="p-5 rounded-lg bg-surface-panel border border-border-subtle shadow-panel">
+            <BrandingClient stations={stations} />
           </div>
         </main>
         <BottomTransportBar />

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { findStationInTenantScope, getTenantScope } from "@/lib/tenant";
 
 export async function GET(req: Request) {
   const session = await getSessionUser();
@@ -10,13 +11,16 @@ export async function GET(req: Request) {
   const stationId = searchParams.get("stationId");
   const query = searchParams.get("q")?.toLowerCase();
 
-  const isSuper = session.user.role === "SUPER_ADMIN";
-  const orgId = session.activeMembership?.orgId;
+  const { isSuper, orgId } = getTenantScope(session);
 
   const whereClause: Record<string, unknown> = {};
 
   if (stationId) {
-    whereClause.stationId = stationId;
+    const station = await findStationInTenantScope(stationId, isSuper, orgId);
+    if (!station) {
+      return NextResponse.json({ error: "Station not found" }, { status: 404 });
+    }
+    whereClause.stationId = station.id;
   } else if (!isSuper) {
     whereClause.station = { orgId };
   }

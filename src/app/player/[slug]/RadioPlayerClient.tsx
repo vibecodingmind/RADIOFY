@@ -34,24 +34,48 @@ interface NowPlayingProps {
 export function RadioPlayerClient({
   station,
   mountPath,
-  nowPlaying,
+  nowPlaying: initialNowPlaying,
+  streamUrl: initialStreamUrl,
   isEmbed = false,
 }: {
   station: StationProps;
   mountPath: string;
   nowPlaying: NowPlayingProps;
+  streamUrl: string;
   isEmbed?: boolean;
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState(initialNowPlaying);
+  const [listeners, setListeners] = useState(station.currentListeners);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Audio stream URL (points to Icecast port)
-  const streamUrl = typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:${station.portRelay}${mountPath}`
-    : `http://localhost:${station.portRelay}${mountPath}`;
+  const streamUrl = initialStreamUrl;
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/public/stations/${station.slug}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.nowPlaying) {
+          setNowPlaying({
+            trackTitle: data.nowPlaying.trackTitle,
+            artist: data.nowPlaying.artist,
+            album: data.nowPlaying.album,
+          });
+        }
+        if (data.station?.currentListeners != null) {
+          setListeners(data.station.currentListeners);
+        }
+      } catch {
+        /* ignore polling errors */
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [station.slug]);
 
   function togglePlay() {
     if (!audioRef.current) return;

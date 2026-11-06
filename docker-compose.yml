@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: radiofy
+      POSTGRES_PASSWORD: radiofy
+      POSTGRES_DB: radiofy
+    ports:
+      - "5432:5432"
+    volumes:
+      - radiofy_pg:/var/lib/postgresql/data
+
+  icecast:
+    image: moul/icecast:latest
+    restart: unless-stopped
+    ports:
+      - "8010:8000"
+    environment:
+      ICECAST_SOURCE_PASSWORD: hackme
+      ICECAST_ADMIN_PASSWORD: hackme
+      ICECAST_PASSWORD: hackme
+      ICECAST_RELAY_PASSWORD: hackme
+      ICECAST_HOSTNAME: localhost
+
+volumes:
+  radiofy_pg:

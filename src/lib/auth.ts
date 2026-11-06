@@ -58,6 +58,13 @@ export async function getSessionUser() {
 
     if (!user || !user.isActive) return null;
 
+    const activeMembership =
+      (decoded.orgId
+        ? user.memberships.find((m) => m.orgId === decoded.orgId)
+        : undefined) ||
+      user.memberships[0] ||
+      null;
+
     return {
       user: {
         id: user.id,
@@ -70,7 +77,7 @@ export async function getSessionUser() {
         isActive: user.isActive,
       },
       memberships: user.memberships,
-      activeMembership: user.memberships[0] || null,
+      activeMembership,
     };
   } catch (error) {
     console.error("Error getting session user:", error);

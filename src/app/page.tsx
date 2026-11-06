@@ -5,6 +5,7 @@ import { TopNavbar } from "@/components/layout/TopNavbar";
 import { BottomTransportBar } from "@/components/layout/BottomTransportBar";
 import { CommandCenter } from "@/components/dashboard/CommandCenter";
 import { prisma } from "@/lib/prisma";
+import { getTenantScope, stationOrgWhere } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,14 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch stations for active organization
+  const { isSuper, orgId } = getTenantScope(session);
+
+  if (!isSuper && !orgId) {
+    redirect("/team");
+  }
+
   const stations = await prisma.station.findMany({
+    where: stationOrgWhere(isSuper, orgId),
     orderBy: { createdAt: "asc" },
   });
 

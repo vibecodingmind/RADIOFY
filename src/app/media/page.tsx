@@ -20,9 +20,11 @@ export default async function MediaPage() {
       where: isSuper ? undefined : { orgId },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.organization.findUnique({
-      where: { id: orgId },
-    }),
+    orgId
+      ? prisma.organization.findUnique({
+          where: { id: orgId },
+        })
+      : Promise.resolve(null),
   ]);
 
   const defaultStationId = stations[0]?.id;

@@ -225,6 +225,8 @@ model Station {
   description      String?
   genre            String               @default("Variety")
   logoUrl          String?
+  playerBannerUrl  String?
+  playerAccentColor String              @default("#00E5FF")
   streamKey        String               @unique @default(uuid())
   sourcePassword   String
   adminPassword    String
@@ -289,6 +291,9 @@ model StationProcessState {
   jitterMs         Float     @default(0)
   encoderHealth    Float     @default(100)
   lastHeartbeat    DateTime  @default(now())
+  autodjMetaJson   String    @default("{}")
+  liquidsoapConfigPath String?
+  supervisorPid    Int?
 
   station          Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
 

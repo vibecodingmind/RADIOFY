@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { StreamAudioFormat, StationStatus } from "@prisma/client";
 import crypto from "crypto";
+import { EntitlementService } from "./entitlements";
 
 export interface CreateStationInput {
   orgId: string;
@@ -58,11 +59,7 @@ export class StationProvisioningService {
 
     if (!org) throw new Error("Organization not found");
 
-    if (org.stations.length >= org.maxStations) {
-      throw new Error(
-        `Organization station limit reached (${org.maxStations} max). Please upgrade your plan to provision additional stations.`
-      );
-    }
+    await EntitlementService.assertCanCreateStation(input.orgId);
 
     const portIngest = await this.allocateNextPort();
     const slug = await this.generateUniqueSlug(input.name);

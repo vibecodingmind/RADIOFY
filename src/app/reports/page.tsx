@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
 import { BottomTransportBar } from "@/components/layout/BottomTransportBar";
-import { FileSpreadsheet, Download, ShieldCheck, Radio } from "lucide-react";
+import Link from "next/link";
+import { FileSpreadsheet, Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,13 +47,13 @@ export default async function RoyaltyReportsPage() {
               </p>
             </div>
 
-            <button
-              onClick={undefined}
+            <Link
+              href="/api/reports/export"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary-container font-semibold text-xs transition-all shadow-photonic"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export SoundExchange CSV</span>
-            </button>
+            </Link>
           </div>
 
           <div className="rounded-lg bg-surface-panel border border-border-subtle overflow-hidden shadow-panel">

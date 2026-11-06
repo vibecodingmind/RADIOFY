@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { AuthorizationService } from "@/lib/permissions";
-import { StationStatus } from "@prisma/client";
+import { getTenantScope } from "@/lib/tenant";
+import { StreamSupervisor } from "@/lib/stream-supervisor";
+import { tickAutoDjForStation } from "@/lib/autodj-engine";
 
 export async function POST(
   req: Request,
@@ -12,7 +14,7 @@ export async function POST(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const orgId = session.activeMembership?.orgId;
+  const { isSuper, orgId } = getTenantScope(session);
 
   const canControl = AuthorizationService.can(session.user, "START_STOP_STATION", {
     membership: session.activeMembership
@@ -36,63 +38,60 @@ export async function POST(
     return NextResponse.json({ error: "Station not found" }, { status: 404 });
   }
 
-  let newStatus: StationStatus = station.backendStatus;
+  if (!isSuper && station.orgId !== orgId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let supervisorResult: unknown = null;
   let actionMessage = "";
 
   switch (action) {
     case "start":
-      newStatus = StationStatus.ON_AIR;
-      actionMessage = `Station ${station.name} broadcast transmission initialized on port ${station.portIngest}`;
+      supervisorResult = await StreamSupervisor.start(id);
+      await tickAutoDjForStation(id);
+      actionMessage = `Station ${station.name} is ON AIR (port ${station.portIngest})`;
       break;
 
     case "stop":
-      newStatus = StationStatus.STOPPED;
-      actionMessage = `Station ${station.name} audio stream halted gracefully`;
+      supervisorResult = await StreamSupervisor.stop(id);
+      actionMessage = `Station ${station.name} stream halted`;
       break;
 
     case "restart":
-      newStatus = StationStatus.ON_AIR;
-      actionMessage = `Station ${station.name} stream encoder processes restarted successfully`;
+      supervisorResult = await StreamSupervisor.restart(id);
+      await tickAutoDjForStation(id);
+      actionMessage = `Station ${station.name} encoder restarted`;
       break;
 
     case "reload_autodj":
-      actionMessage = `Station ${station.name} AutoDJ cue playlist re-indexed`;
+      supervisorResult = await StreamSupervisor.reloadAutoDj(id);
+      actionMessage = `Station ${station.name} AutoDJ playlist re-indexed`;
       break;
 
     default:
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
-  // Update status and process state in DB
-  const updated = await prisma.station.update({
+  const updated = await prisma.station.findUnique({
     where: { id },
-    data: {
-      backendStatus: newStatus,
-      processState: {
-        update: {
-          lastHeartbeat: new Date(),
-          encoderHealth: newStatus === StationStatus.ON_AIR ? 100 : 0,
-        },
-      },
-    },
     include: { processState: true },
   });
 
-  // Audit log
   await prisma.auditLog.create({
     data: {
-      orgId,
+      orgId: station.orgId,
       userId: session.user.id,
       action: `station.action_${action}`,
       resourceType: "Station",
       resourceId: id,
-      metadata: JSON.stringify({ message: actionMessage }),
+      metadata: JSON.stringify({ message: actionMessage, supervisorResult }),
     },
   });
 
   return NextResponse.json({
     success: true,
     message: actionMessage,
+    supervisor: supervisorResult,
     station: updated,
   });
 }

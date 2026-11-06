@@ -1,0 +1,10 @@
+{
+  "name": "Radiofy Broadcast OS",
+  "short_name": "Radiofy",
+  "description": "Internet radio hosting and broadcast control",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0E14",
+  "theme_color": "#00E5FF",
+  "icons": []
+}

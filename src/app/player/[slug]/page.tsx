@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { RadioPlayerClient } from "./RadioPlayerClient";
+import { buildMountStreamUrl } from "@/lib/stream-url";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function PublicPlayerPage({
     },
   });
 
-  if (!station) notFound();
+  if (!station || !station.publicPageEnabled) notFound();
 
   const nowPlaying = station.broadcastLogs[0] || {
     trackTitle: "Neon Broadcast Stream",
@@ -46,8 +47,15 @@ export default async function PublicPlayerPage({
       }`}
     >
       <RadioPlayerClient
-        station={station}
+        station={{
+          ...station,
+          currentListeners: station.currentListeners,
+        }}
         mountPath={station.mounts[0]?.mountPath || "/live"}
+        streamUrl={buildMountStreamUrl(
+          station.mounts[0]?.mountPath || "/live",
+          station.portRelay
+        )}
         nowPlaying={nowPlaying}
         isEmbed={isEmbed}
       />

@@ -22,17 +22,16 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-interface StationData {
+interface ApiStationRow {
   id: string;
   name: string;
-  tag?: string;
-  status: "ON-AIR" | "STANDBY" | "OFFLINE";
-  subStatus?: string;
-  listeners: number;
-  format: string;
-  bitrate: number;
-  currentShow: string;
-  vuLevel: number;
+  slug: string;
+  backendStatus: string;
+  defaultBitrate: number;
+  defaultFormat: string;
+  currentListeners: number;
+  autoDjEnabled: boolean;
+  genre: string;
 }
 
 export function CommandCenter() {
@@ -45,6 +44,32 @@ export function CommandCenter() {
   const [autoDjMenuOpen, setAutoDjMenuOpen] = useState(false);
   const [isCrossfading, setIsCrossfading] = useState(false);
   const [alertNotice, setAlertNotice] = useState<string | null>(null);
+  const [matrixStations, setMatrixStations] = useState<ApiStationRow[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/stations");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.stations)) {
+          setMatrixStations(data.stations);
+        }
+      } finally {
+        if (!cancelled) setStationsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function formatStreamLabel(format: string, bitrate: number) {
+    const codec = format.split("_")[0] || format;
+    return `${bitrate} kbps ${codec}`;
+  }
 
   // Animate VU meters and track progress in real-time
   useEffect(() => {
@@ -484,202 +509,98 @@ export function CommandCenter() {
                   Synchronized Transmitter Matrix
                 </h2>
                 <span className="px-1.5 py-0.5 rounded bg-surface-container text-[10px] font-mono text-tertiary">
-                  4 Channels Active
+                  {matrixStations.filter((s) => s.backendStatus === "ON_AIR").length} Channels Active
                 </span>
               </div>
-              <button className="text-xs text-primary-container hover:underline font-mono">
-                Configure Encoder Presets
-              </button>
+              <Link
+                href="/stations/create"
+                className="text-xs text-primary-container hover:underline font-mono"
+              >
+                Provision New Channel
+              </Link>
             </div>
 
-            {/* Station 1: Neon Horizon FM */}
-            <div className="p-3 rounded bg-surface-container hover:bg-surface-elevated border border-border-subtle transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-on-surface">Neon Horizon FM</span>
-                    <span className="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-mono text-[9px] font-bold">
-                      FLAGSHIP
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="text-tertiary flex items-center gap-1 font-mono text-[11px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-tertiary-container" />
-                      ON-AIR: AUTODJ
-                    </span>
-                    <span>•</span>
-                    <span className="font-mono text-[11px]">320 kbps Opus</span>
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant/80">
-                    Synthwave After Dark with DJ Kaelen
-                  </div>
-                </div>
+            {stationsLoading ? (
+              <div className="py-6 text-center text-xs text-on-surface-variant font-mono">
+                Loading transmitter matrix…
               </div>
-
-              {/* Stereo VU Meter & Action */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 w-28 font-mono text-[9px]">
-                  <div className="flex items-center gap-1">
-                    <span className="text-on-surface-variant w-3">L</span>
-                    <div className="flex-1 bg-surface-container-lowest h-2 rounded overflow-hidden flex">
-                      <div
-                        className="bg-tertiary-container h-full transition-all duration-300"
-                        style={{ width: `${vuMeterAnim[0]}%` }}
-                      />
-                    </div>
-                    <span className="text-tertiary w-8 text-right">-12dB</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-on-surface-variant w-3">R</span>
-                    <div className="flex-1 bg-surface-container-lowest h-2 rounded overflow-hidden flex">
-                      <div
-                        className="bg-tertiary-container h-full transition-all duration-300"
-                        style={{ width: `${vuMeterAnim[1]}%` }}
-                      />
-                    </div>
-                    <span className="text-tertiary w-8 text-right">-14dB</span>
-                  </div>
-                </div>
-
+            ) : matrixStations.length === 0 ? (
+              <div className="py-6 text-center space-y-2">
+                <p className="text-xs text-on-surface-variant">No stations provisioned yet.</p>
                 <Link
-                  href="/stations/neon-horizon-fm"
-                  className="px-3 py-1.5 rounded bg-surface-panel hover:bg-surface-container text-xs font-semibold text-primary border border-border-subtle"
+                  href="/stations/create"
+                  className="inline-flex items-center gap-1 text-xs text-primary-container font-semibold"
                 >
-                  Studio
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Create your first station
                 </Link>
               </div>
-            </div>
-
-            {/* Station 2: Aether Chillout Lounge */}
-            <div className="p-3 rounded bg-surface-container hover:bg-surface-elevated border border-border-subtle transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-secondary-container/20 border border-secondary/40 flex items-center justify-center text-secondary">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-on-surface">Aether Chillout Lounge</span>
-                    <span className="px-1.5 py-0.2 rounded bg-live-tally-red/20 text-live-tally-red font-mono text-[9px] font-bold">
-                      LIVE DJ
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="font-mono text-[11px]">5,110 listeners</span>
-                    <span>•</span>
-                    <span className="font-mono text-[11px]">256 kbps AAC</span>
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant/80">
-                    Sarah Jenkins (London Studio A • 18ms latency)
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 w-28 font-mono text-[9px]">
-                  <div className="flex items-center gap-1">
-                    <span className="text-on-surface-variant w-3">M</span>
-                    <div className="flex-1 bg-surface-container-lowest h-2 rounded overflow-hidden flex">
-                      <div
-                        className="bg-tertiary-container h-full transition-all duration-300"
-                        style={{ width: `${vuMeterAnim[2]}%` }}
-                      />
+            ) : (
+              matrixStations.map((st, index) => {
+                const onAir = st.backendStatus === "ON_AIR";
+                const vu = vuMeterAnim[index % vuMeterAnim.length];
+                return (
+                  <div
+                    key={st.id}
+                    className={`p-3 rounded bg-surface-container hover:bg-surface-elevated border border-border-subtle transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      onAir ? "" : "opacity-80"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container">
+                        <Radio className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-on-surface">{st.name}</span>
+                          {index === 0 && (
+                            <span className="px-1.5 py-0.2 rounded bg-surface-container-high text-primary font-mono text-[9px] font-bold">
+                              FLAGSHIP
+                            </span>
+                          )}
+                          <span className="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant font-mono text-[9px]">
+                            {st.backendStatus.replace("_", " ")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                          <span className="font-mono text-[11px]">
+                            {st.currentListeners.toLocaleString()} listeners
+                          </span>
+                          <span>•</span>
+                          <span className="font-mono text-[11px]">
+                            {formatStreamLabel(st.defaultFormat, st.defaultBitrate)}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-on-surface-variant/80">
+                          {st.autoDjEnabled ? "AutoDJ enabled" : "Live ingest"} • {st.genre}
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-tertiary w-8 text-right">-18dB</span>
-                  </div>
-                </div>
 
-                <Link
-                  href="/stations/aether-chillout"
-                  className="px-3 py-1.5 rounded bg-surface-panel hover:bg-surface-container text-xs font-semibold text-primary border border-border-subtle"
-                >
-                  Studio
-                </Link>
-              </div>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-1 w-28 font-mono text-[9px]">
+                        <div className="flex items-center gap-1">
+                          <span className="text-on-surface-variant w-3">M</span>
+                          <div className="flex-1 bg-surface-container-lowest h-2 rounded overflow-hidden flex">
+                            <div
+                              className="bg-tertiary-container h-full transition-all duration-300"
+                              style={{ width: `${vu}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-            {/* Station 3: Tokyo Underground Bass */}
-            <div className="p-3 rounded bg-surface-container hover:bg-surface-elevated border border-border-subtle transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-tertiary-container/20 border border-tertiary/40 flex items-center justify-center text-tertiary">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-on-surface">Tokyo Underground Bass</span>
-                    <span className="px-1.5 py-0.2 rounded bg-vu-warning-amber/20 text-vu-warning-amber font-mono text-[9px] font-bold">
-                      DECK B ROTATION
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="font-mono text-[11px]">3,240 listeners</span>
-                    <span>•</span>
-                    <span className="font-mono text-[11px]">320 kbps MP3</span>
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant/80">
-                    Sub-Bass Dub Heavy Deck #2
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 w-28 font-mono text-[9px]">
-                  <div className="flex items-center gap-1">
-                    <span className="text-on-surface-variant w-3">M</span>
-                    <div className="flex-1 bg-surface-container-lowest h-2 rounded overflow-hidden flex">
-                      <div
-                        className="bg-vu-warning-amber h-full transition-all duration-300"
-                        style={{ width: `78%` }}
-                      />
+                      <Link
+                        href={`/stations/${st.slug}`}
+                        className="px-3 py-1.5 rounded bg-surface-panel hover:bg-surface-container text-xs font-semibold text-primary border border-border-subtle"
+                      >
+                        Studio
+                      </Link>
                     </div>
-                    <span className="text-vu-warning-amber w-8 text-right">-6dB</span>
                   </div>
-                </div>
-
-                <Link
-                  href="/stations/tokyo-underground"
-                  className="px-3 py-1.5 rounded bg-surface-panel hover:bg-surface-container text-xs font-semibold text-primary border border-border-subtle"
-                >
-                  Studio
-                </Link>
-              </div>
-            </div>
-
-            {/* Station 4: Classical Echoes HD (Standby) */}
-            <div className="p-3 rounded bg-surface-container hover:bg-surface-elevated border border-border-subtle transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 opacity-75">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-surface-panel border border-border-subtle flex items-center justify-center text-on-surface-variant">
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-on-surface">Classical Echoes HD</span>
-                    <span className="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant font-mono text-[9px]">
-                      STANDBY IN 18M
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="font-mono text-[11px]">722 standby cues</span>
-                    <span>•</span>
-                    <span className="font-mono text-[11px]">FLAC Lossless Master</span>
-                  </div>
-                  <div className="text-[11px] text-on-surface-variant/80">
-                    Next: Nocturne in C Minor AutoCue
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <button
-                  onClick={() => setAlertNotice("Activated Classical Echoes HD transmission")}
-                  className="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-elevated text-xs font-semibold text-on-surface border border-border-subtle"
-                >
-                  Start Now
-                </button>
-              </div>
-            </div>
+                );
+              })
+            )}
           </div>
         </div>
 

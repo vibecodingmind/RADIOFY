@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,7 +15,9 @@ import {
   User,
   Shield,
   Check,
+  Menu,
 } from "lucide-react";
+import { MobileSidebar } from "./MobileSidebar";
 
 interface StationOption {
   id: string;
@@ -39,21 +41,53 @@ interface TopNavbarProps {
 
 export function TopNavbar({
   user,
-  stations = [
-    { id: "1", name: "Neon Horizon FM", format: "Opus", bitrate: 320, status: "ON-AIR" },
-    { id: "2", name: "Aether Chillout Lounge", format: "AAC", bitrate: 256, status: "ON-AIR" },
-    { id: "3", name: "Tokyo Underground Bass", format: "MP3", bitrate: 320, status: "ON-AIR" },
-    { id: "4", name: "Classical Echoes HD", format: "FLAC", bitrate: 320, status: "STANDBY" },
-  ],
-  activeStationId = "1",
+  stations = [],
+  activeStationId,
   onSelectStation,
 }: TopNavbarProps) {
   const router = useRouter();
   const [stationMenuOpen, setStationMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<{
+    stations: Array<{ id: string; name: string; slug: string }>;
+    media: Array<{ id: string; title: string; artist: string }>;
+  }>({ stations: [], media: [] });
+  const [notifications, setNotifications] = useState<
+    Array<{ id: string; title: string; body: string; createdAt: string }>
+  >([]);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const activeStation =
     stations.find((s) => s.id === activeStationId) || stations[0];
+
+  const runSearch = useCallback(async (q: string) => {
+    if (q.length < 2) {
+      setSearchResults({ stations: [], media: [] });
+      return;
+    }
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setSearchResults({
+      stations: data.stations || [],
+      media: data.media || [],
+    });
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => runSearch(searchQuery), 250);
+    return () => clearTimeout(t);
+  }, [searchQuery, runSearch]);
+
+  async function loadNotifications() {
+    const res = await fetch("/api/notifications");
+    if (!res.ok) return;
+    const data = await res.json();
+    setNotifications(data.notifications || []);
+  }
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -62,22 +96,68 @@ export function TopNavbar({
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-72 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-subtle z-30 px-4 flex items-center justify-between">
+    <>
+      <MobileSidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} stationCount={stations.length} />
+      <header className="fixed top-0 right-0 left-0 md:left-72 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-subtle z-30 px-4 flex items-center justify-between">
+        <button
+          type="button"
+          className="md:hidden p-2 rounded hover:bg-surface-panel"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
       {/* Search Input */}
       <div className="flex-1 max-w-md hidden sm:block">
         <div className="relative">
           <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search tracks, presenters, stations, relays... ⌘K"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            placeholder="Search stations, tracks, shows..."
             className="w-full pl-9 pr-4 py-1.5 rounded bg-surface-panel border border-border-subtle text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-border-focus transition-colors"
           />
+          {searchOpen && searchQuery.length >= 2 && (
+            <div className="absolute top-full mt-1 w-full rounded bg-surface-elevated border border-border-subtle shadow-panel p-2 z-50 max-h-64 overflow-y-auto text-xs">
+              {searchResults.stations.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/stations/${s.slug}`}
+                  className="block px-2 py-1.5 rounded hover:bg-surface-container"
+                  onClick={() => setSearchOpen(false)}
+                >
+                  <span className="font-semibold">{s.name}</span>
+                  <span className="text-on-surface-variant ml-2 font-mono">station</span>
+                </Link>
+              ))}
+              {searchResults.media.map((m) => (
+                <Link
+                  key={m.id}
+                  href="/media"
+                  className="block px-2 py-1.5 rounded hover:bg-surface-container"
+                  onClick={() => setSearchOpen(false)}
+                >
+                  {m.title} — {m.artist}
+                </Link>
+              ))}
+              {searchResults.stations.length === 0 && searchResults.media.length === 0 && (
+                <div className="px-2 py-2 text-on-surface-variant">No results</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Right Action Cluster */}
       <div className="flex items-center gap-3">
         {/* Active Station Selector Pill */}
+        {stations.length > 0 && (
         <div className="relative">
           <button
             onClick={() => setStationMenuOpen(!stationMenuOpen)}
@@ -129,6 +209,7 @@ export function TopNavbar({
             </div>
           )}
         </div>
+        )}
 
         {/* Global Toolbar Quick Buttons */}
         <div className="flex items-center gap-1 border-l border-border-subtle pl-2">
@@ -146,15 +227,38 @@ export function TopNavbar({
           >
             <BookOpen className="w-4 h-4" />
           </Link>
-          <button
-            className="relative p-1.5 rounded hover:bg-surface-panel text-on-surface-variant hover:text-on-surface transition-colors"
-            title="Alerts"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-live-tally-red text-white text-[9px] font-mono font-bold flex items-center justify-center">
-              2
-            </span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="relative p-1.5 rounded hover:bg-surface-panel text-on-surface-variant hover:text-on-surface transition-colors"
+              title="Alerts"
+              onClick={() => {
+                setNotifOpen(!notifOpen);
+                loadNotifications();
+              }}
+            >
+              <Bell className="w-4 h-4" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-live-tally-red text-white text-[9px] font-mono font-bold flex items-center justify-center">
+                  {Math.min(9, notifications.length)}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 mt-1 w-72 rounded bg-surface-elevated border border-border-subtle shadow-panel p-2 z-50 max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <p className="text-[11px] text-on-surface-variant px-2 py-2">No recent activity</p>
+                ) : (
+                  notifications.slice(0, 12).map((n) => (
+                    <div key={n.id} className="px-2 py-2 border-b border-border-subtle/50 text-[11px]">
+                      <div className="font-semibold text-on-surface">{n.title}</div>
+                      <div className="text-on-surface-variant">{n.body}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <button
             className="p-1.5 rounded hover:bg-surface-panel text-on-surface-variant hover:text-on-surface transition-colors"
             title="Dark Broadcast Mode"
@@ -234,5 +338,6 @@ export function TopNavbar({
         </div>
       </div>
     </header>
+    </>
   );
 }

@@ -9,7 +9,11 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "node scripts/seed.mjs"
+    "db:seed": "node scripts/seed.mjs",
+    "stack:up": "docker compose up -d",
+    "stack:down": "docker compose down",
+    "supervisor": "node services/supervisor/server.mjs",
+    "cron:sync": "node scripts/cron-sync.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
