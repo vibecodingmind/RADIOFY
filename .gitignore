@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+build
+.env
+storage/*
+!storage/.gitkeep
+*.log
+.DS_Store
+coverage
