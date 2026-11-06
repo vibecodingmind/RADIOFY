@@ -3,7 +3,18 @@ import type { NextRequest } from "next/server";
 
 const COOKIE_NAME = "radiofy_auth_token";
 
-const PUBLIC_PATHS = new Set(["/login", "/register"]);
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/register",
+  "/home",
+  "/features",
+  "/pricing",
+  "/about",
+  "/contact",
+  "/help",
+  "/terms",
+  "/privacy",
+]);
 const PUBLIC_PREFIXES = [
   "/player/",
   "/api/auth/login",
@@ -29,11 +40,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const token = request.cookies.get(COOKIE_NAME)?.value;
+  if (pathname === "/" && !token) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/home";
+    return NextResponse.rewrite(url);
+  }
+
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get(COOKIE_NAME)?.value;
   if (!token) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

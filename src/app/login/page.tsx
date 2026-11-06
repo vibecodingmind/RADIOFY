@@ -29,7 +29,10 @@ export default function LoginPage() {
         throw new Error(data.error || "Failed to log in");
       }
 
-      router.push("/");
+      const role = data.user?.role as string | undefined;
+      const platform =
+        role === "SUPER_ADMIN" || role === "SUPPORT_ADMIN" || role === "BILLING_ADMIN";
+      router.push(platform ? "/admin" : "/");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");

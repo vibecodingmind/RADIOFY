@@ -1,9 +1,8 @@
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
-import { BottomTransportBar } from "@/components/layout/BottomTransportBar";
 import { AdminDashboardClient } from "./AdminDashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -12,8 +11,9 @@ export default async function AdminDashboardPage() {
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
-  if (session.user.role !== "SUPER_ADMIN") {
-    redirect("/"); // Non-superadmins cannot access platform cockpit
+  const platformRoles = ["SUPER_ADMIN", "SUPPORT_ADMIN", "BILLING_ADMIN"] as const;
+  if (!platformRoles.includes(session.user.role as (typeof platformRoles)[number])) {
+    redirect("/");
   }
 
   const [orgs, stations, auditLogs, transactions] = await Promise.all([
@@ -68,10 +68,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0B0E14] text-[#E2E8F0] antialiased">
-      <Sidebar />
+      <AdminSidebar role={session.user.role} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <TopNavbar />
-        <main className="flex-1 overflow-y-auto pb-24">
+        <TopNavbar user={session.user} />
+        <main className="flex-1 overflow-y-auto">
           <AdminDashboardClient
             organizations={serializedOrgs}
             stations={serializedStations}
@@ -81,7 +81,6 @@ export default async function AdminDashboardPage() {
           />
         </main>
       </div>
-      <BottomTransportBar />
     </div>
   );
 }

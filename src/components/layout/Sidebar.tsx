@@ -204,17 +204,16 @@ export function Sidebar({ stationCount = 4 }: SidebarProps) {
             <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
               STREAM ENCODER
             </span>
-            <span className="font-mono text-[10px] text-tertiary font-bold">24ms</span>
+            <span className="font-mono text-[10px] text-tertiary font-bold">LOCAL</span>
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-on-surface flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-tertiary-container inline-block" />
-              Global Edge: 99.99%
+              Broadcaster console
             </span>
-            <span className="font-mono text-on-surface-variant">12 Nodes</span>
           </div>
           <div className="flex items-center justify-between text-[10px] font-mono text-on-surface-variant pt-1 border-t border-border-subtle/50">
-            <span>ICECAST / WEBRTC CLUSTER</span>
+            <span>STREAMING NODE</span>
             <span className="text-primary-container">⚡</span>
           </div>
         </div>

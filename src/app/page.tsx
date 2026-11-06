@@ -15,6 +15,14 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (
+    session.user.role === "SUPER_ADMIN" ||
+    session.user.role === "SUPPORT_ADMIN" ||
+    session.user.role === "BILLING_ADMIN"
+  ) {
+    redirect("/admin");
+  }
+
   const { isSuper, orgId } = getTenantScope(session);
 
   if (!isSuper && !orgId) {
