@@ -38,6 +38,21 @@ interface TopNavbarProps {
   stations?: StationOption[];
   activeStationId?: string;
   onSelectStation?: (id: string) => void;
+  /** Admin shell uses a narrower toolbar without station switcher. */
+  layoutVariant?: "studio" | "admin";
+}
+
+function platformRoleLabel(role: string): string {
+  switch (role) {
+    case "SUPER_ADMIN":
+      return "PLATFORM SUPER ADMIN";
+    case "SUPPORT_ADMIN":
+      return "SUPPORT";
+    case "BILLING_ADMIN":
+      return "BILLING";
+    default:
+      return "BROADCASTER";
+  }
 }
 
 export function TopNavbar({
@@ -45,6 +60,7 @@ export function TopNavbar({
   stations = [],
   activeStationId,
   onSelectStation,
+  layoutVariant = "studio",
 }: TopNavbarProps) {
   const router = useRouter();
   const [stationMenuOpen, setStationMenuOpen] = useState(false);
@@ -98,8 +114,15 @@ export function TopNavbar({
 
   return (
     <>
+      {layoutVariant === "studio" && (
       <MobileSidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} stationCount={stations.length} />
-      <header className="fixed top-0 right-0 left-0 md:left-72 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-subtle z-30 px-4 flex items-center justify-between">
+      )}
+      <header
+        className={`fixed top-0 right-0 left-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-subtle z-30 px-4 flex items-center justify-between ${
+          layoutVariant === "admin" ? "md:left-64" : "md:left-72"
+        }`}
+      >
+        {layoutVariant === "studio" && (
         <button
           type="button"
           className="md:hidden p-2 rounded hover:bg-surface-panel"
@@ -108,8 +131,10 @@ export function TopNavbar({
         >
           <Menu className="w-5 h-5" />
         </button>
+        )}
 
       {/* Search Input */}
+      {layoutVariant === "studio" ? (
       <div className="flex-1 max-w-md hidden sm:block">
         <div className="relative">
           <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
@@ -154,11 +179,18 @@ export function TopNavbar({
           )}
         </div>
       </div>
+      ) : (
+        <div className="flex-1 hidden sm:block pl-2">
+          <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+            Platform administration
+          </span>
+        </div>
+      )}
 
       {/* Right Action Cluster */}
       <div className="flex items-center gap-3">
         {/* Active Station Selector Pill */}
-        {stations.length > 0 && (
+        {layoutVariant === "studio" && stations.length > 0 && (
         <div className="relative">
           <button
             onClick={() => setStationMenuOpen(!stationMenuOpen)}
@@ -214,6 +246,8 @@ export function TopNavbar({
 
         {/* Global Toolbar Quick Buttons */}
         <div className="flex items-center gap-1 border-l border-border-subtle pl-2">
+          {layoutVariant === "studio" ? (
+            <>
           <Link
             href="/analytics"
             className="p-1.5 rounded hover:bg-surface-panel text-on-surface-variant hover:text-on-surface transition-colors"
@@ -228,6 +262,15 @@ export function TopNavbar({
           >
             <BookOpen className="w-4 h-4" />
           </Link>
+            </>
+          ) : (
+            <Link
+              href="/"
+              className="hidden sm:inline text-[11px] text-primary-container font-semibold px-2"
+            >
+              Open broadcast console
+            </Link>
+          )}
           <div className="relative">
             <button
               type="button"
@@ -279,7 +322,7 @@ export function TopNavbar({
                 {user?.name || "Elena Rostova"}
               </div>
               <div className="text-[9px] font-mono text-primary-container uppercase tracking-wider mt-1 leading-none">
-                {user?.role === "SUPER_ADMIN" ? "HQ SUPERADMIN" : "BROADCASTER"}
+                {user?.role ? platformRoleLabel(user.role) : "OPERATOR"}
               </div>
             </div>
             {user?.avatarUrl ? (
@@ -309,18 +352,22 @@ export function TopNavbar({
                 className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container text-xs text-on-surface"
               >
                 <User className="w-3.5 h-3.5 text-on-surface-variant" />
-                <span>Operator Profile</span>
+                <span>{layoutVariant === "admin" ? "Account settings" : "Operator Profile"}</span>
               </Link>
-              {user?.role === "SUPER_ADMIN" && (
+              {layoutVariant === "studio" &&
+                (user?.role === "SUPER_ADMIN" ||
+                  user?.role === "SUPPORT_ADMIN" ||
+                  user?.role === "BILLING_ADMIN") && (
                 <Link
                   href="/admin"
                   onClick={() => setProfileMenuOpen(false)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container text-xs text-[#00E5FF] font-semibold"
                 >
                   <Shield className="w-3.5 h-3.5 text-[#00E5FF]" />
-                  <span>HQ Superadmin Cockpit</span>
+                  <span>Platform administration</span>
                 </Link>
               )}
+              {layoutVariant === "studio" && (
               <Link
                 href="/team"
                 onClick={() => setProfileMenuOpen(false)}
@@ -329,6 +376,7 @@ export function TopNavbar({
                 <Shield className="w-3.5 h-3.5 text-on-surface-variant" />
                 <span>Team & Permissions</span>
               </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-error-container/20 text-xs text-error transition-colors text-left"

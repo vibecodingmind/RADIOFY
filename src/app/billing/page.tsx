@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
 import { BottomTransportBar } from "@/components/layout/BottomTransportBar";
 import { BillingClient } from "./BillingClient";
+import { orgAllows } from "@/lib/org-access";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ export default async function BillingPage() {
 
   const orgId = session.activeMembership?.orgId;
   if (!orgId) redirect("/");
+
+  const canSeeBilling = orgAllows(session, "VIEW_BILLING") || orgAllows(session, "MANAGE_BILLING");
+  if (!canSeeBilling) redirect("/");
 
   const [org, plans, invoices, stations] = await Promise.all([
     prisma.organization.findUnique({

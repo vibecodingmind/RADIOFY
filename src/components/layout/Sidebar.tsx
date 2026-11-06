@@ -112,8 +112,8 @@ export function Sidebar({ stationCount = 4 }: SidebarProps) {
                   v4.2
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mt-0.5">
-                BROADCAST OS
+                <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mt-0.5">
+                Broadcaster console
               </span>
             </div>
           </div>
